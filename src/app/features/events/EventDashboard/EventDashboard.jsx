@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { Grid, GridColumn, Button } from 'semantic-ui-react'
 import EventList from '../EventList/EventList'
 import EventForm from '../EventForm/EventForm'
-
+import cuid from 'cuid'
 
 
 
@@ -10,7 +10,7 @@ const events = [
   {
     id: '1',
     title: 'Trip to Tower of London',
-    date: '2018-03-27T11:00:00+00:00',
+    date: '2018-03-27',
     category: 'culture',
     description:
       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus sollicitudin ligula eu leo tincidunt, quis scelerisque magna dapibus. Sed eget ipsum vel arcu vehicula ullamcorper.',
@@ -34,7 +34,7 @@ const events = [
   {
     id: '2',
     title: 'Trip to Punch and Judy Pub',
-    date: '2018-03-28T14:00:00+00:00',
+    date: '2018-03-28',
     category: 'drinks',
     description:
       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus sollicitudin ligula eu leo tincidunt, quis scelerisque magna dapibus. Sed eget ipsum vel arcu vehicula ullamcorper.',
@@ -60,26 +60,80 @@ const events = [
 export default class EventDashboard extends Component {
   state = {
     events: events,
-    isOpen: false
+    isOpen: false,
+    selectedEvent: null
   }
 
-  handleFormOpenToggle = () => {
-    this.setState((prevState)=> ({
-      isOpen: !prevState.isOpen
+  handleFormCancel = () => {
+    this.setState({
+      isOpen: false
+    });
+  }
+
+  handleCreateFormOpen = () => {
+    this.setState({
+      isOpen: true,
+      selectedEvent: null
+    });
+  }
+  handleSelectEvent = (event) => {
+    this.setState(()=> ({
+      selectedEvent: event,
+      isOpen: true
     }));
   }
+
+  handleCreatEvents =(newEvent) => {
+    newEvent.id = cuid();
+    newEvent.hostPhotoURL = './assets/user.png';
+    this.setState((prevState) => {
+      return {
+        events: [...prevState.events, newEvent],
+        isOpen: false
+      };
+    });
+  }
+
+  handleUpdateEvent = (updatedEvent) => {
+    this.setState(({events})=> {
+      return {
+        events: events.map((event) => event.id === updatedEvent.id ? {...updatedEvent} : event),
+        isOpen: false
+      }
+    })
+  }
+
+  handleDeleteEvent = (deleteId) => {
+    this.setState(({events})=> {
+      return {
+        events: events.filter((event) => event.id !== deleteId),
+        isOpen: false
+      }
+    })
+  }
+
+
     render() {
-      const {events, isOpen} = this.state;
+      const {events, isOpen, selectedEvent} = this.state;
         return (
             <div>
                 <Grid>
                     <GridColumn width={10}>
-                        <EventList events={events}/>
+                        
+                        <EventList events={events} selectEvent={this.handleSelectEvent} deleteEvent={this.handleDeleteEvent}/>
+
                     </GridColumn>
                     <GridColumn width={6}>
-                        <Button onClick={this.handleFormOpenToggle} positive content="Create Events"/>
-                        { isOpen && <EventForm cancelFormOpen = {this.handleFormOpenToggle}/> }
-                    </GridColumn>
+                        
+                        <Button onClick={this.handleCreateFormOpen} positive content="Create Events"/>
+                       
+                        { 
+                          //Using the key to re-render the form anytime the selectedEvent obj changes or is null.
+                          isOpen && <EventForm key={selectedEvent ? selectedEvent.id : 0} 
+                          selectedEvent= {selectedEvent} cancelFormOpen= {this.handleFormCancel} 
+                          creatEvents= {this.handleCreatEvents} updateEvent={this.handleUpdateEvent}/> 
+                        }
+                    </GridColumn> 
                 </Grid>
             </div>
         )
